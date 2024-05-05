@@ -1,18 +1,15 @@
-#include "time.h"
-#include <ArduinoJson.h>
-#include <PubSubClient.h>
-#include <WiFi.h>
 #include "MqttHandler.hpp"
 
 MqttHandler::MqttHandler(const char* Ssid, const char* Password, const char* Mqtt_server, const char* Mqtt_user, const char* Mqtt_password) 
-    : ssid(Ssid), password(Password), mqtt_server(Mqtt_server), mqtt_user(Mqtt_user), mqtt_password(Mqtt_password) {}
+    : ssid(Ssid), password(Password), mqtt_server(Mqtt_server), mqtt_user(Mqtt_user), mqtt_password(Mqtt_password), client(espClient) {}
 
 void MqttHandler::begin() {
     Serial.begin(115200);
-    setup_wifi();
+    pinMode(2, OUTPUT);
+    setupWifi();
+    setupTime();
     client.setServer(mqtt_server, 1883);
     client.connect("ESP32Client", mqtt_user, mqtt_password);
-    pinMode(2, OUTPUT);
 }
 
 void MqttHandler::handle() {
@@ -26,22 +23,24 @@ void MqttHandler::handle() {
     StaticJsonDocument<200> doc;
     doc["carId"] = "QWE123123RTY";
     doc["isTurnedOn"] = true;
-    doc["velocity"] = 100.0;
-    doc["fuelLevel"] = 20.0;
-    // nie dzialaja te te funkcje, zapewne kwestia przypisania do tego jsona
-    // doc["time"] = getTime();
-    // doc["date"] = getDate();
+    doc["velocity"] = tempValue;
+    doc["fuelLevel"] = tempValue / 2;
+    doc["time"] = getTime();
+    doc["date"] = getDate();
 
-    // char jsonBuffer[512];
-    // serializeJson(doc, jsonBuffer);
-    // client.publish("topic/testing/qwerty", jsonBuffer);
+    char jsonBuffer[512];
+    serializeJson(doc, jsonBuffer);
+    client.publish("topic/testing/qwerty", jsonBuffer);
     Serial.println("Published topic");
 
     Serial.print("WiFi status: ");
     Serial.println(WiFi.status());
+
+    tempValue += 10.5;
+    delay(1000);
 }
 
-void MqttHandler::setup_wifi() {
+void MqttHandler::setupWifi() {
     delay(10);
 
     Serial.println();

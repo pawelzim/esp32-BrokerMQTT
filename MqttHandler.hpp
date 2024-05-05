@@ -19,12 +19,13 @@ private:
 
     const long gmtOffset_sec = 3600;
     const int daylightOffset_sec = 3600;
+    double tempValue = 100;
 
     void setupTime();
     String getTime();
     String getDate();
     void reconnect();
-    void setup_wifi();
+    void setupWifi();
 public:
     MqttHandler(const char* Ssid, const char* Password, const char* Mqtt_server, const char* Mqtt_user, const char* Mqtt_password);
     void handle();
