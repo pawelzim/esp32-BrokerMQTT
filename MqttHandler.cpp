@@ -67,75 +67,54 @@ void MqttHandler::setupWifi() {
 }
 
 void MqttHandler::sendPostRequest() {
-    WiFiClientSecure clientPostRequest;
-    clientPostRequest.setInsecure();
+    HTTPClient httpPostRequest;
+    String url = "http://" + String(mqtt_server) + ":5212/devices/" + String(deviceName);
+    Serial.println(url);
 
-    HTTPClient httpsPostRequest;
-    String serverName = "https://localhost:7240/devices/";
-    String url = serverName + deviceName;
+    bool postSuccess = false;
 
-    while (true) {
-        if (httpsPostRequest.begin(clientPostRequest, url)) {
-            httpsPostRequest.addHeader("Content-Type", "application/json");
 
-            int httpResponseCode = httpsPostRequest.POST("");
+    if (!postSuccess) {
+      if (httpPostRequest.begin(espClient, url)) {
+            
+            httpPostRequest.addHeader("Accept", "*/*");
+            // httpPostRequest.addHeader("Content/Type", "Application/Json");
+            StaticJsonDocument<200> doc;
+            doc["deviceName"] = deviceName;
+
+            String requestBody;
+            serializeJson(doc, requestBody);
+
+            int httpResponseCode = httpPostRequest.POST(requestBody);
 
             if (httpResponseCode > 0) {
-                String response = httpsPostRequest.getString();
-                Serial.println(httpResponseCode);
-                Serial.println(response);
-                if (httpResponseCode == 200) {
-                    break;
-                }
-            } else {
-                Serial.print("Error sending POST: ");
-                Serial.println(httpResponseCode);
-            }
+                String response = httpPostRequest.getString();
+                Serial.println("HTTP response: " + String(httpResponseCode));
+                Serial.println("Server response: " + response);
 
-            httpsPostRequest.end();
-        } else {
-            Serial.println("Unable to connect");
+                if (httpResponseCode == 200) {
+                    Serial.println("POST request send successfully");
+                    postSuccess = true;
+                } else {
+                    Serial.println("Unsuccessful POST request");
+                }
+            } 
+            else {
+                Serial.println("Error while sending POST: " + String(httpResponseCode));
+            }
+            //problem z polaczeniem
+            httpPostRequest.end();
+        } 
+        else {
+            Serial.println("Cannot connect to the server");
         }
 
-        delay(3000);
+        if (!postSuccess) {
+            Serial.println("Sending POST again in 3 seconds");
+            delay(3000);
+        }
     }
 }
-
-
-// void MqttHandler::sendPostRequest() {
-//     WiFiClientSecure clientPostRequest;
-//     clientPostRequest.setInsecure();
-
-//     HTTPClient httpsPostRequest;
-//     String serverName = "https://localhost:7240/devices/";
-//     String url = serverName + deviceName;
-
-//     if (httpsPostRequest.begin(clientPostRequest, url)) {
-//         httpsPostRequest.addHeader("Content-Type", "application/json");
-
-//         StaticJsonDocument<200> doc;
-//         doc["status"] = "started";
-//         doc["deviceName"] = deviceName;
-
-//         String requestBody;
-//         serializeJson(doc, requestBody);
-
-//         int httpResponseCode = httpsPostRequest.POST(requestBody);
-
-//         if (httpResponseCode > 0) {
-//             String response = httpsPostRequest.getString();
-//             Serial.println(httpResponseCode);
-//             Serial.println(response);
-//         } else {
-//             Serial.print("Error sending POST: ");
-//             Serial.println(httpResponseCode);
-//         }
-
-//         httpsPostRequest.end();
-//     } else {
-//         Serial.println("Unable to connect");
-//     }
-// }
 
 void MqttHandler::setupMqtt() {
     client.setServer(mqtt_server, 1883);

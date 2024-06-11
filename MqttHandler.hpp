@@ -2,7 +2,6 @@
 #include "time.h"
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
-#include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 
 #ifndef MqttHandler_hpp
